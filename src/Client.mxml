@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Application xmlns:fx="http://ns.adobe.com/mxml/2009" 
+			   xmlns:s="library://ns.adobe.com/flex/spark" 
+			   xmlns:mx="library://ns.adobe.com/flex/mx" 
+			   minWidth="955" minHeight="600"
+			   applicationComplete="application1_applicationCompleteHandler(event)">
+	<fx:Script>
+		<![CDATA[
+			import com.flotype.bridge.Bridge;
+			import com.flotype.bridge.Util;
+			
+			import mx.events.FlexEvent;
+			
+			[Bindable]
+			protected var _messageHistory:String = "";
+			
+			protected var _channel:Object;
+			
+			protected var _clientID:Number = int(Math.random()*10);
+			
+			protected var _bridge:Bridge;
+			
+			protected function application1_applicationCompleteHandler(event:FlexEvent):void
+			{
+				_bridge = new Bridge({apiKey:'95f83855'})
+				
+				var chatObject:Object = {
+					message: function(sender:String, message:String):void {
+						Util.log(sender, ':', message);
+						_messageHistory += sender + ": " + message + "\n";
+					}
+				}
+				
+				_bridge.connect(function(...args):void {
+					_bridge.getService('auth', function(auth:Object, name:String):void {
+						auth.login('steve', 'secret123', 'ian-lovers', chatObject, function(channel:Object, channelName:String):void {
+							Util.info('joined channel: ' + channelName );
+							channel.message('steve', 'Flotype Bridge is nifty!');
+							_channel = channel;
+						});
+					});
+				});
+				
+			}
+			
+			protected function sendButton_clickHandler(event:MouseEvent):void {
+				sendMessage();
+			}
+			
+			protected function sendMessage():void {
+				if( _channel ){
+					_channel.message('client'+_clientID, textInput.text);
+					textInput.text = '';
+					textInput.setFocus();
+				}
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	
+	<s:layout>
+		<s:VerticalLayout/>
+	</s:layout>
+	
+	<s:HGroup>
+		<s:TextInput id="textInput"
+					 enter="sendMessage()"/>
+		<s:Button id="sendButton" 
+				  label="Send" 
+				  click="sendButton_clickHandler(event)"/>
+	</s:HGroup>
+	
+	<s:TextArea id="messageList"
+				text="{_messageHistory}"/>
+	
+</s:Application>

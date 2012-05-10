@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Application xmlns:fx="http://ns.adobe.com/mxml/2009" 
+			   xmlns:s="library://ns.adobe.com/flex/spark" 
+			   xmlns:mx="library://ns.adobe.com/flex/mx" 
+			   width="100%" height="100%"
+			   applicationComplete="application1_applicationCompleteHandler(event)">
+	<fx:Script>
+		<![CDATA[
+			import com.adobe.serialization.json.JSON;
+			import com.flotype.bridge.Bridge;
+			import com.flotype.bridge.Util;
+			
+			import mx.events.FlexEvent;
+			
+			protected var _bridge:Bridge;
+			
+			[Bindable]
+			protected var _logOutput:String = '';
+			
+			protected function application1_applicationCompleteHandler(event:FlexEvent):void
+			{
+				Util.log = function(...args):void {
+					trace.apply(null,args);
+					_logOutput += args.join('') + '\n';
+				};
+				
+				_bridge = new Bridge({
+					apiKey: '50bd31b7'
+//					, host: '192.168.1.101'
+//					, port: 8090
+				});
+				
+				var authHandler:Object = {
+					login: function(username:String, password:String, room:String, chatObj:Object, chatCallback:Function):void {
+						if (password == "secret123") {
+							Util.log('Welcome!');
+							
+							// Call joinChannel with calling client's Bridge Objects
+							_bridge.joinChannel(room, chatObj, chatCallback);
+						} else {
+							Util.log('Sorry!');
+						}
+					}
+				}
+				
+				_bridge.connect(function(response:Object=null):void {
+					Util.info("Bridge connect response: " + JSON.encode( response ));
+				});
+				_bridge.on('ready',function(...args):void{
+					Util.info('Bridge said it was ready.');
+					_bridge.publishService('auth', authHandler, function callback(...args):void {
+						Util.info('publishService response received');
+					});
+				});
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	
+	<s:TextArea id="logOutput" width="100%" height="100%"
+				text="{_logOutput}"/>
+	
+</s:Application>
